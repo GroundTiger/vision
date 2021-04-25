@@ -39,7 +39,8 @@ import utils
 def get_dataset(name, image_set, transform, data_path):
     paths = {
         "coco": (data_path, get_coco, 91),
-        "coco_kp": (data_path, get_coco_kp, 2)
+        "coco_kp": (data_path, get_coco_kp, 2),
+        "event_tag": (data_path, get_coco_kp, 4)
     }
     p, ds_fn, num_classes = paths[name]
 
