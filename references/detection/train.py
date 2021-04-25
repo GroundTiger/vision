@@ -36,16 +36,13 @@ import presets
 import utils
 
 
-def get_dataset(name, image_set, transform, data_path):
+def get_dataset(name, transform, data_path):
     paths = {
-        "coco": (data_path, get_coco, 91),
-        "coco_kp": (data_path, get_coco_kp, 2),
-        "event_tag": (data_path, get_coco_kp, 4)
+        "event_tag": (data_path, get_event, 4)
     }
     p, ds_fn, num_classes = paths[name]
-
-    ds = ds_fn(p, image_set=image_set, transforms=transform)
-    return ds, num_classes
+    ds = ds_fn(p, transforms=transform)
+    return dataset, num_classes
 
 
 def get_transform(train):
@@ -63,6 +60,11 @@ def main(args):
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    indices = torch.randperm(len(dataset)).tolist()
+    rate_val = 0.2
+    N_val = int(len(indices)*rate_val)
+    dataset = torch.utils.data.Subset(dataset, indice[:-N_val] )
+    dataset_test = torch.utils.data.Subset(dataset_test, indice[-N_val:] )
 
     print("Creating data loaders")
     if args.distributed:
@@ -72,11 +74,11 @@ def main(args):
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
-    if args.aspect_ratio_group_factor >= 0:
-        group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
-        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
-    else:
-        train_batch_sampler = torch.utils.data.BatchSampler(
+    #if args.aspect_ratio_group_factor >= 0:
+    #    group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
+    #    train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+    #else:
+    train_batch_sampler = torch.utils.data.BatchSampler(
             train_sampler, args.batch_size, drop_last=True)
 
     data_loader = torch.utils.data.DataLoader(
