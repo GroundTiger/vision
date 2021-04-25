@@ -28,6 +28,7 @@ import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 
 from coco_utils import get_coco, get_coco_kp
+from event_tag import get_event
 
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 from engine import train_one_epoch, evaluate
@@ -38,11 +39,11 @@ import utils
 
 def get_dataset(name, transform, data_path):
     paths = {
-        "event_tag": (data_path, get_event, 4)
+        "event_tag": (data_path, get_event, 5)
     }
     p, ds_fn, num_classes = paths[name]
     ds = ds_fn(p, transforms=transform)
-    return dataset, num_classes
+    return ds, num_classes
 
 
 def get_transform(train):
@@ -58,13 +59,13 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, get_transform(train=True), args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, get_transform(train=False), args.data_path)
     indices = torch.randperm(len(dataset)).tolist()
     rate_val = 0.2
     N_val = int(len(indices)*rate_val)
-    dataset = torch.utils.data.Subset(dataset, indice[:-N_val] )
-    dataset_test = torch.utils.data.Subset(dataset_test, indice[-N_val:] )
+    dataset = torch.utils.data.Subset(dataset, indices[:-N_val] )
+    dataset_test = torch.utils.data.Subset(dataset_test, indices[-N_val:] )
 
     print("Creating data loaders")
     if args.distributed:
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
     parser.add_argument('--dataset', default='coco', help='dataset')
-    parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
+    parser.add_argument('--model', default='fasterrcnn_resnet50_fpn', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=2, type=int,
                         help='images per gpu, the total batch size is $NGPU x batch_size')

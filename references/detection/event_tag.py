@@ -3,6 +3,7 @@ import sys
 import glob
 import pandas as pd
 import torch
+from PIL import Image
 
 label_map = { 'Triangle' : 1,
               'Sawtooth' : 2,
@@ -71,7 +72,7 @@ class EventTag(object):
     def __len__(self):
         return self._df.shape[0]
 
-def get_event(root, image_set, transforms, mode='instances'):
+def get_event(root, transforms, mode='instances'):
     pattern = os.path.join(root, 'Tag*.csv')
     csvFiles = glob.glob(pattern)
     if len(csvFiles) != 1:
