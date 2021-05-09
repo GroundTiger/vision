@@ -26,6 +26,7 @@ import torch.utils.data
 import torchvision
 import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 from coco_utils import get_coco, get_coco_kp
 from event_tag import get_event
@@ -35,7 +36,6 @@ from engine import train_one_epoch, evaluate
 
 import presets
 import utils
-
 
 def get_dataset(name, transform, data_path):
     paths = {
@@ -98,8 +98,13 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
+    model = torchvision.models.detection.__dict__[args.model](pretrained=args.pretrained,
                                                               **kwargs)
+    # get number of input features for the classifier
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    # replace the pre-trained head with a new one
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
     model.to(device)
 
     model_without_ddp = model
